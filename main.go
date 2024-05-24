@@ -5,7 +5,7 @@ import "net/http"
 func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hello, tasty"))
+		w.Write([]byte("hello, bravo"))
 	})
 
 	check(http.ListenAndServe("0.0.0.0:8080", http.DefaultServeMux))
