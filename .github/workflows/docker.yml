@@ -1,4 +1,4 @@
-name: Push Docker Tag on PR Merge
+name: Push Docker Tag On PR Merge
 
 on:
   pull_request:
