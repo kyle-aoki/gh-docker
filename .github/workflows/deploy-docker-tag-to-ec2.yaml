@@ -28,7 +28,19 @@ jobs:
       run: |
         tag_to_deploy=${{ github.event.inputs.tag }}
         echo "deploying $tag_to_deploy"
-        ssh --help
+        
+        INSTANCE_IP=${{ vars.INSTANCE_IP }}
+        SSH_KEY=${{ secrets.SSH_KEY }}
 
-        # echo "" >> ~/.ssh/config
-        # echo "Host target" >> ~/.ssh/config
+        mkdir ~/.ssh
+        touch ~/.ssh/config
+
+        echo "$SSH_KEY" > ~/ssh-key.pem
+
+        echo "Host target"                  >> ~/.ssh/config
+        echo "  HostName $INSTANCE_IP"      >> ~/.ssh/config
+        echo "  User ubuntu"                >> ~/.ssh/config
+        echo "  IdentityFile ~/ssh-key.pem" >> ~/.ssh/config
+        echo "  StrictHostKeyChecking no"   >> ~/.ssh/config
+
+        ssh target docker ps
