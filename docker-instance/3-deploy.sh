@@ -50,5 +50,4 @@ function deploy {
   fi
 }
 
-# deploy kyleaoki500 xxx gh-docker BRAVO-5
-# deploy ${{ vars.docker_username }} ${{ secrets.docker_password }} ${{ vars.docker_image_repository }} ${{ vars.docker_image_tag }}
+deploy $1 $2 $3 $4

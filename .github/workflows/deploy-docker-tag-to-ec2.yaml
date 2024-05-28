@@ -1,21 +1,8 @@
-name: Mixed inputs
+name: Deploy Image Tag
 
 on:
   workflow_dispatch:
     inputs:
-      # name:
-      #   type: choice
-      #   description: Who to greet
-      #   options: 
-      #   - monalisa
-      #   - cschleiden
-      # message:
-      #   required: true
-      # use-emoji:
-      #   type: boolean
-      #   description: Include 🎉🤣 emojis
-      # environment:
-      #   type: environment
       tag:
         required: true
 
@@ -26,21 +13,17 @@ jobs:
     steps:
     - name: Send greeting
       run: |
-        tag_to_deploy=${{ github.event.inputs.tag }}
-        echo "deploying $tag_to_deploy"
-        
-        INSTANCE_IP=${{ vars.INSTANCE_IP }}
-
         mkdir ~/.ssh
         touch ~/.ssh/config
 
         echo -n "${{ secrets.SSH_KEY }}" > ~/ssh-key.pem
         sudo chmod 600 ~/ssh-key.pem
 
-        echo "Host target"                  >> ~/.ssh/config
-        echo "  HostName $INSTANCE_IP"      >> ~/.ssh/config
-        echo "  User ubuntu"                >> ~/.ssh/config
-        echo "  IdentityFile ~/ssh-key.pem" >> ~/.ssh/config
-        echo "  StrictHostKeyChecking no"   >> ~/.ssh/config
+        echo "Host target"                        >> ~/.ssh/config
+        echo "  HostName ${{ vars.INSTANCE_IP }}" >> ~/.ssh/config
+        echo "  User ubuntu"                      >> ~/.ssh/config
+        echo "  IdentityFile ~/ssh-key.pem"       >> ~/.ssh/config
+        echo "  StrictHostKeyChecking no"         >> ~/.ssh/config
 
         ssh target docker ps
+        ssh target "bash ~/deploy.sh ${{ vars.docker_username }} ${{ secrets.docker_password }} ${{ vars.docker_repository }} ${{ github.event.inputs.tag }}"
