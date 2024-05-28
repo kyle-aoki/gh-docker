@@ -15,5 +15,5 @@ sudo chmod 666 /var/run/docker.sock
 ###################################################################################################
 
 sudo apt install nginx -y
-scp ./docker-instance/nginx/nginx-8080.conf dev:nginx-8080.conf
-scp ./docker-instance/nginx/nginx-8081.conf dev:nginx-8081.conf
+scp ./nginx.conf dev:nginx.conf
+sudo nginx -s reload
