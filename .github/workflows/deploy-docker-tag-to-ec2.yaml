@@ -1,4 +1,4 @@
-name: Deploy Image Tag
+name: Deploy Tag
 
 on:
   workflow_dispatch:
