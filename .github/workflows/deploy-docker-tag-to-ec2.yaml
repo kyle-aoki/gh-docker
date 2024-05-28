@@ -30,12 +30,11 @@ jobs:
         echo "deploying $tag_to_deploy"
         
         INSTANCE_IP=${{ vars.INSTANCE_IP }}
-        SSH_KEY=${{ secrets.SSH_KEY }}
 
         mkdir ~/.ssh
         touch ~/.ssh/config
 
-        echo "$SSH_KEY" > ~/ssh-key.pem
+        echo -n "${{ secrets.SSH_KEY }}" > ~/ssh-key.pem
 
         echo "Host target"                  >> ~/.ssh/config
         echo "  HostName $INSTANCE_IP"      >> ~/.ssh/config
