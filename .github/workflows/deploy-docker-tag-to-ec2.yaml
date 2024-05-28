@@ -7,23 +7,22 @@ on:
         required: true
 
 jobs:
-  greet:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Send greeting
+    - name: Run Deploy Script On Docker Instance
       run: |
+        INSTANCE_IP=${{ vars.INSTANCE_IP }}
         mkdir ~/.ssh
         touch ~/.ssh/config
 
         echo -n "${{ secrets.SSH_KEY }}" > ~/ssh-key.pem
         sudo chmod 600 ~/ssh-key.pem
 
-        echo "Host target"                        >> ~/.ssh/config
-        echo "  HostName ${{ vars.INSTANCE_IP }}" >> ~/.ssh/config
-        echo "  User ubuntu"                      >> ~/.ssh/config
-        echo "  IdentityFile ~/ssh-key.pem"       >> ~/.ssh/config
-        echo "  StrictHostKeyChecking no"         >> ~/.ssh/config
+        echo "Host target"                  >> ~/.ssh/config
+        echo "  HostName $INSTANCE_IP"      >> ~/.ssh/config
+        echo "  User ubuntu"                >> ~/.ssh/config
+        echo "  IdentityFile ~/ssh-key.pem" >> ~/.ssh/config
+        echo "  StrictHostKeyChecking no"   >> ~/.ssh/config
 
-        ssh target docker ps
         ssh target "bash ~/deploy.sh ${{ vars.docker_username }} ${{ secrets.docker_password }} ${{ vars.docker_repository }} ${{ github.event.inputs.tag }}"
