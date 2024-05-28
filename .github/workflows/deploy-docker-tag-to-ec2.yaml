@@ -28,6 +28,7 @@ jobs:
       run: |
         tag_to_deploy=${{ github.event.inputs.tag }}
         echo "deploying $tag_to_deploy"
+        ssh --help
 
-        echo "" >> ~/.ssh/config
-        echo "Host target" >> ~/.ssh/config
+        # echo "" >> ~/.ssh/config
+        # echo "Host target" >> ~/.ssh/config
