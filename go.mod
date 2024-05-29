@@ -1,4 +1,4 @@
-module gh-docker
+module petra
 
 go 1.22.1
 
