@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -29,16 +30,10 @@ func dockerauth() string {
 	return authBase64
 }
 
-func listContainers() []types.Container {
-	log.Println("listing containers")
-	return must(dockerclient().ContainerList(context.Background(), container.ListOptions{All: true}))
-}
-
-func deploy(tag string) []types.Container {
+func dockerDeploy(tag string) {
 	ctx := context.Background()
 
 	imageName := fmt.Sprintf("%s/%s:%s", CFG.DockerUsername, CFG.DockerRepository, tag)
-	log.Println("deploying", imageName)
 
 	cli := dockerclient()
 	defer cli.Close()
@@ -47,7 +42,7 @@ func deploy(tag string) []types.Container {
 	out := must(cli.ImagePull(ctx, imageName, image.PullOptions{RegistryAuth: dockerauth()}))
 	defer out.Close()
 	must(io.Copy(io.Discard, out))
-	log.Println("✅ pulled", imageName)
+	log.Println("pulled", imageName)
 
 	containers := must(cli.ContainerList(ctx, container.ListOptions{All: true}))
 
@@ -72,11 +67,14 @@ func deploy(tag string) []types.Container {
 		killAll(cli, ctx, containers)
 	}
 
+	config := string(must(os.ReadFile(homefile(applicationConfigFile))))
+
 	cr := must(cli.ContainerCreate(
 		ctx,
 		&container.Config{
 			Image:        imageName,
 			ExposedPorts: nat.PortSet{"8080/tcp": {}},
+			Env:          []string{fmt.Sprintf("CONFIG=%s", config)},
 		},
 		&container.HostConfig{
 			PortBindings: nat.PortMap{
@@ -95,8 +93,6 @@ func deploy(tag string) []types.Container {
 	if shouldKillOneContainer {
 		killAll(cli, ctx, []types.Container{containerToKill})
 	}
-
-	return must(cli.ContainerList(ctx, container.ListOptions{All: true}))
 }
 
 func killAll(cli *client.Client, ctx context.Context, containers []types.Container) {

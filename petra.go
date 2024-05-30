@@ -2,59 +2,51 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
+)
+
+const (
+	version               = "v1.0.0"
+	petraConfigFile       = "petra-config.json"
+	applicationConfigFile = "config.json"
+)
+
+var (
+	shouldPrintVersion = flag.Bool("version", false, "print version")
+	shouldDeployTag    = flag.String("tag", "", "deploy a specific tag")
 )
 
 type PetraConfig struct {
 	DockerUsername   string
 	DockerPassword   string
 	DockerRepository string
-	Key              string
 }
 
 var CFG *PetraConfig = &PetraConfig{}
 
 func main() {
-	args := os.Args[1:]
-	if len(args) != 1 {
-		panic("petra <path-to-config-file.json>")
+	flag.Parse()
+	if *shouldPrintVersion {
+		fmt.Println(version)
+		os.Exit(0)
 	}
-	bytes := must(os.ReadFile(args[0]))
+	log.Println("petra", version)
+
+	bytes := must(os.ReadFile(homefile(petraConfigFile)))
 	check(json.Unmarshal(bytes, &CFG))
 
-	http.HandleFunc("/deploy", httpDeploy)
-	http.HandleFunc("/list", httpList)
+	exec(*shouldDeployTag != "", func() { dockerDeploy(*shouldDeployTag) })
 
-	am := &AuthMiddleware{handler: http.DefaultServeMux}
-
-	log.Println("listening on port 10000")
-	check(http.ListenAndServe("0.0.0.0:10000", am))
+	flag.PrintDefaults()
+	os.Exit(1)
 }
 
-func handleHttpPanic(w http.ResponseWriter) {
-	if r := recover(); r != nil {
-		w.WriteHeader(500)
-		w.Write([]byte(fmt.Sprintf("%s", r)))
+func exec(cond bool, fn func()) {
+	if cond {
+		fn()
+		os.Exit(0)
 	}
-}
-
-func httpDeploy(w http.ResponseWriter, r *http.Request) {
-	type DeployInput struct {
-		Tag string
-	}
-	defer handleHttpPanic(w)
-	bytes := must(io.ReadAll(r.Body))
-	input := &DeployInput{}
-	check(json.Unmarshal(bytes, &input))
-	containers := deploy(input.Tag)
-	w.Write(must(json.Marshal(containers)))
-}
-
-func httpList(w http.ResponseWriter, r *http.Request) {
-	defer handleHttpPanic(w)
-	w.Write(must(json.Marshal(listContainers())))
 }
