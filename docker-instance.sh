@@ -1,7 +1,6 @@
 ###################################################################################################
 #### files ########################################################################################
 ###################################################################################################
-
 curl https://raw.githubusercontent.com/kyle-aoki/petra/main/petra              > petra
 curl https://raw.githubusercontent.com/kyle-aoki/petra/main/petra-config.json  > petra-config.json
 curl https://raw.githubusercontent.com/kyle-aoki/petra/main/nginx.conf         > nginx.conf
@@ -18,6 +17,7 @@ sudo apt install nginx -y
 sudo mv nginx.conf /etc/nginx/nginx.conf
 sudo nginx -s reload
 
+sudo chmod 700 petra
 sudo mv petra /bin/petra
 
 ###################################################################################################
