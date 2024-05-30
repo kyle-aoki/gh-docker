@@ -1,14 +1,11 @@
 ###################################################################################################
 #### files ########################################################################################
 ###################################################################################################
-SSH_HOST=dev
 
-GOOS=linux GOARCH=386 go build
-
-scp petra              "$SSH_HOST":petra
-scp petra-config.json  "$SSH_HOST":petra-config.json
-scp nginx.conf         "$SSH_HOST":nginx.conf
-scp config.json        "$SSH_HOST":config.json
+curl https://raw.githubusercontent.com/kyle-aoki/petra/main/petra              > petra
+curl https://raw.githubusercontent.com/kyle-aoki/petra/main/petra-config.json  > petra-config.json
+curl https://raw.githubusercontent.com/kyle-aoki/petra/main/nginx.conf         > nginx.conf
+curl https://raw.githubusercontent.com/kyle-aoki/petra/main/config.json        > config.json
 
 ###################################################################################################
 #### install ######################################################################################
