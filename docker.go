@@ -67,6 +67,8 @@ func dockerDeploy(tag string) {
 		killAll(cli, ctx, containers)
 	}
 
+	log.Println("next port is", nextPort)
+
 	config := string(must(os.ReadFile(homefile(applicationConfigFile))))
 
 	cr := must(cli.ContainerCreate(

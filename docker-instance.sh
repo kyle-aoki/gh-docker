@@ -22,3 +22,10 @@ sudo mv nginx.conf /etc/nginx/nginx.conf
 sudo nginx -s reload
 
 sudo mv petra /bin/petra
+
+###################################################################################################
+#### https ########################################################################################
+###################################################################################################
+sudo apt install certbot -y
+sudo apt install python3-certbot-nginx -y
+sudo certbot --nginx --agree-tos --non-interactive -m kyle.aoki.000@gmail.com --domains student-api-dev.kyle-aoki.dev
