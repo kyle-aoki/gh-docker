@@ -15,8 +15,9 @@ const (
 )
 
 var (
-	shouldPrintVersion = flag.Bool("version", false, "print version")
-	shouldDeployTag    = flag.String("tag", "", "deploy a specific tag")
+	versionFlag = flag.Bool("version", false, "print version")
+	tag         = flag.String("tag", "", "deploy a specific tag")
+	job         = flag.String("job", "", "run a docker image as a job")
 )
 
 type PetraConfig struct {
@@ -29,7 +30,7 @@ var CFG *PetraConfig = &PetraConfig{}
 
 func main() {
 	flag.Parse()
-	if *shouldPrintVersion {
+	if *versionFlag {
 		fmt.Println(version)
 		os.Exit(0)
 	}
@@ -38,7 +39,8 @@ func main() {
 	bytes := must(os.ReadFile(homefile(petraConfigFile)))
 	check(json.Unmarshal(bytes, &CFG))
 
-	exec(*shouldDeployTag != "", func() { dockerDeploy(*shouldDeployTag) })
+	exec(*tag != "", func() { dockerDeploy(*tag) })
+	exec(*job != "", func() { runJob(*job) })
 
 	flag.PrintDefaults()
 	os.Exit(1)

@@ -19,9 +19,10 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-func dockerclient() *client.Client {
-	return must(client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation()))
-}
+var (
+	ctx          = context.Background()
+	dockerclient = must(client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation()))
+)
 
 func dockerauth() string {
 	authConfig := registry.AuthConfig{Username: CFG.DockerUsername, Password: CFG.DockerPassword}
@@ -30,21 +31,31 @@ func dockerauth() string {
 	return authBase64
 }
 
-func dockerDeploy(tag string) {
-	ctx := context.Background()
+func formatImage(tag string) string {
+	return fmt.Sprintf("%s/%s:%s", CFG.DockerUsername, CFG.DockerRepository, tag)
+}
 
-	imageName := fmt.Sprintf("%s/%s:%s", CFG.DockerUsername, CFG.DockerRepository, tag)
+func readConfig() string {
+	return string(must(os.ReadFile(homefile(applicationConfigFile))))
+}
 
-	cli := dockerclient()
-	defer cli.Close()
-
+func pullImage(imageName string) {
 	log.Println("pulling", imageName)
-	out := must(cli.ImagePull(ctx, imageName, image.PullOptions{RegistryAuth: dockerauth()}))
+	out := must(dockerclient.ImagePull(ctx, imageName, image.PullOptions{RegistryAuth: dockerauth()}))
 	defer out.Close()
 	must(io.Copy(io.Discard, out))
 	log.Println("pulled", imageName)
+}
 
-	containers := must(cli.ContainerList(ctx, container.ListOptions{All: true}))
+func list() []types.Container {
+	return must(dockerclient.ContainerList(ctx, container.ListOptions{All: true}))
+}
+
+func dockerDeploy(tag string) {
+	imageName := formatImage(tag)
+	pullImage(imageName)
+
+	containers := list()
 
 	var nextPort string = "8080"
 	var shouldKillOneContainer bool
@@ -64,19 +75,17 @@ func dockerDeploy(tag string) {
 			}
 		}
 	} else if len(containers) > 1 {
-		killAll(cli, ctx, containers)
+		killAll(containers)
 	}
 
 	log.Println("next port is", nextPort)
 
-	config := string(must(os.ReadFile(homefile(applicationConfigFile))))
-
-	cr := must(cli.ContainerCreate(
+	cr := must(dockerclient.ContainerCreate(
 		ctx,
 		&container.Config{
 			Image:        imageName,
 			ExposedPorts: nat.PortSet{"8080/tcp": {}},
-			Env:          []string{fmt.Sprintf("CONFIG=%s", config)},
+			Env:          []string{fmt.Sprintf("CONFIG=%s", readConfig())},
 		},
 		&container.HostConfig{
 			PortBindings: nat.PortMap{
@@ -89,21 +98,50 @@ func dockerDeploy(tag string) {
 	))
 	log.Println("created container:", cr.ID)
 
-	check(cli.ContainerStart(ctx, cr.ID, container.StartOptions{}))
+	check(dockerclient.ContainerStart(ctx, cr.ID, container.StartOptions{}))
 	log.Println("started container", cr.ID)
 
 	if shouldKillOneContainer {
-		killAll(cli, ctx, []types.Container{containerToKill})
+		killAll([]types.Container{containerToKill})
 	}
 }
 
-func killAll(cli *client.Client, ctx context.Context, containers []types.Container) {
+func killAll(containers []types.Container) {
 	for _, cont := range containers {
 		log.Println("killing container:", cont.ID)
-		check(cli.ContainerStop(ctx, cont.ID, container.StopOptions{}))
-		check(cli.ContainerRemove(ctx, cont.ID, container.RemoveOptions{
+		check(dockerclient.ContainerStop(ctx, cont.ID, container.StopOptions{}))
+		check(dockerclient.ContainerRemove(ctx, cont.ID, container.RemoveOptions{
 			RemoveVolumes: true,
 			Force:         true,
 		}))
 	}
+}
+
+func runJob(job string) {
+	imageName := formatImage(job)
+	log.Println("running job:", imageName)
+	pullImage(imageName)
+	cr := must(dockerclient.ContainerCreate(
+		ctx,
+		&container.Config{
+			Image: imageName,
+			Env:   []string{fmt.Sprintf("CONFIG=%s", readConfig())},
+		},
+		&container.HostConfig{},
+		&network.NetworkingConfig{},
+		v1.DescriptorEmptyJSON.Platform,
+		"",
+	))
+	log.Println("created container", cr.ID)
+	check(dockerclient.ContainerStart(ctx, cr.ID, container.StartOptions{}))
+	log.Println("started", cr.ID)
+
+	out := must(dockerclient.ContainerLogs(ctx, cr.ID, container.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Follow:     true,
+	}))
+	defer out.Close()
+	must(io.Copy(os.Stdout, out))
+	log.Println("finished running", imageName)
 }
