@@ -25,4 +25,4 @@ sudo mv petra /bin/petra
 ###################################################################################################
 sudo apt install certbot -y
 sudo apt install python3-certbot-nginx -y
-sudo certbot --nginx --agree-tos --non-interactive -m example@example.com --domains subdomain.domain.com
+sudo certbot --nginx --agree-tos --non-interactive -m example@example.com --domain subdomain.domain.com
