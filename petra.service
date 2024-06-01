@@ -1,0 +1,11 @@
+[Unit]
+Description=petra background worker
+After=network.target
+
+[Service]
+ExecStart=sudo petra --background
+Restart=on-failure
+User=root
+
+[Install]
+WantedBy=multi-user.target

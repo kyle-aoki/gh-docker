@@ -27,7 +27,7 @@ func switchProxyPort(port string) {
 	currNginxConf := string(must(os.ReadFile(nginxconf)))
 	currentProxyPass := strings.ReplaceAll(proxypass, "{{ PORT }}", oppositePort(port))
 	if !strings.Contains(currNginxConf, currentProxyPass) {
-		panic("unknown ngnix.conf state:\n" + nginxconf)
+		panic("unknown ngnix.conf state:\n\n" + currNginxConf + "\n\n")
 	}
 	newProxyPass := strings.ReplaceAll(proxypass, "{{ PORT }}", port)
 	newNginxConf := strings.ReplaceAll(currNginxConf, currentProxyPass, newProxyPass)

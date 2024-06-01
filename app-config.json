@@ -1,0 +1,6 @@
+{
+  "Environment": "dev",
+  "DatabaseUsername": "kyle",
+  "DatabasePassword": "hunter2",
+  "DatabaseURL": "jdbc:postgresql://0.0.0.0:5432/postgres"
+}

@@ -1,5 +1,7 @@
 {
-  "DockerUsername": "kyle",
+  "DockerUsername": "xxx",
   "DockerPassword": "xxx",
-  "DockerRepository": "xyz"
+  "DockerRepository": "xxx",
+  "TargetDockerTag": "xxx",
+  "CurrentDockerTag": "xxx"
 }

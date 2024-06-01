@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -31,31 +32,28 @@ func dockerauth() string {
 	return authBase64
 }
 
-func formatImage(tag string) string {
+func formatImageName(tag string) string {
 	return fmt.Sprintf("%s/%s:%s", CFG.DockerUsername, CFG.DockerRepository, tag)
 }
 
 func readConfig() string {
-	return string(must(os.ReadFile(homefile(applicationConfigFile))))
+	return string(must(os.ReadFile(applicationConfigFile)))
 }
 
 func pullImage(imageName string) {
 	log.Println("pulling", imageName)
+	t1 := time.Now()
 	out := must(dockerclient.ImagePull(ctx, imageName, image.PullOptions{RegistryAuth: dockerauth()}))
 	defer out.Close()
 	must(io.Copy(io.Discard, out))
-	log.Println("pulled", imageName)
-}
-
-func list() []types.Container {
-	return must(dockerclient.ContainerList(ctx, container.ListOptions{All: true}))
+	log.Println("pulled", imageName, "in", time.Since(t1).Truncate(time.Second).String())
 }
 
 func dockerDeploy(tag string) {
-	imageName := formatImage(tag)
+	imageName := formatImageName(tag)
 	pullImage(imageName)
 
-	containers := list()
+	containers := must(dockerclient.ContainerList(ctx, container.ListOptions{All: true}))
 
 	var nextPort string = "8080"
 	var shouldKillOneContainer bool
@@ -96,7 +94,7 @@ func dockerDeploy(tag string) {
 		v1.DescriptorEmptyJSON.Platform,
 		"",
 	))
-	log.Println("created container:", cr.ID)
+	log.Println("created container", cr.ID)
 
 	check(dockerclient.ContainerStart(ctx, cr.ID, container.StartOptions{}))
 	log.Println("started container", cr.ID)
@@ -110,7 +108,7 @@ func dockerDeploy(tag string) {
 
 func killAll(containers []types.Container) {
 	for _, cont := range containers {
-		log.Println("killing container:", cont.ID)
+		log.Println("killing container", cont.ID)
 		check(dockerclient.ContainerStop(ctx, cont.ID, container.StopOptions{}))
 		check(dockerclient.ContainerRemove(ctx, cont.ID, container.RemoveOptions{
 			RemoveVolumes: true,
@@ -120,8 +118,9 @@ func killAll(containers []types.Container) {
 }
 
 func runJob(job string) {
-	imageName := formatImage(job)
-	log.Println("running job:", imageName)
+	imageName := formatImageName(job)
+	log.Println("running job", imageName)
+	
 	pullImage(imageName)
 
 	cr := must(dockerclient.ContainerCreate(
