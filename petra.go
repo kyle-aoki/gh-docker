@@ -39,14 +39,14 @@ func main() {
 	bytes := must(os.ReadFile(homefile(petraConfigFile)))
 	check(json.Unmarshal(bytes, &CFG))
 
-	exec(*tag != "", func() { dockerDeploy(*tag) })
-	exec(*job != "", func() { runJob(*job) })
+	command(*tag != "", func() { dockerDeploy(*tag) })
+	command(*job != "", func() { runJob(*job) })
 
 	flag.PrintDefaults()
 	os.Exit(1)
 }
 
-func exec(cond bool, fn func()) {
+func command(cond bool, fn func()) {
 	if cond {
 		fn()
 		os.Exit(0)

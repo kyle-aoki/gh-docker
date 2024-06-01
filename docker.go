@@ -101,6 +101,8 @@ func dockerDeploy(tag string) {
 	check(dockerclient.ContainerStart(ctx, cr.ID, container.StartOptions{}))
 	log.Println("started container", cr.ID)
 
+	switchProxyPort(nextPort)
+
 	if shouldKillOneContainer {
 		killAll([]types.Container{containerToKill})
 	}
@@ -121,6 +123,7 @@ func runJob(job string) {
 	imageName := formatImage(job)
 	log.Println("running job:", imageName)
 	pullImage(imageName)
+
 	cr := must(dockerclient.ContainerCreate(
 		ctx,
 		&container.Config{
@@ -133,8 +136,9 @@ func runJob(job string) {
 		"",
 	))
 	log.Println("created container", cr.ID)
+
 	check(dockerclient.ContainerStart(ctx, cr.ID, container.StartOptions{}))
-	log.Println("started", cr.ID)
+	log.Println("started container", cr.ID)
 
 	out := must(dockerclient.ContainerLogs(ctx, cr.ID, container.LogsOptions{
 		ShowStdout: true,
@@ -144,4 +148,13 @@ func runJob(job string) {
 	defer out.Close()
 	must(io.Copy(os.Stdout, out))
 	log.Println("finished running", imageName)
+
+	log.Println("stopping container", cr.ID)
+	check(dockerclient.ContainerStop(ctx, cr.ID, container.StopOptions{}))
+
+	log.Println("removing container", cr.ID)
+	check(dockerclient.ContainerRemove(ctx, cr.ID, container.RemoveOptions{
+		RemoveVolumes: true,
+		Force:         true,
+	}))
 }
