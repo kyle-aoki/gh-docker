@@ -53,13 +53,6 @@ func main() {
 	os.Exit(1)
 }
 
-func command(cond bool, fn func()) {
-	if cond {
-		fn()
-		os.Exit(0)
-	}
-}
-
 func setTargetDockerTag(tag string) {
 	log.Println("setting target docker tag:", tag)
 	cfg := readJson[PetraConfig](petraConfigFile)

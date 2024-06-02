@@ -16,6 +16,13 @@ func must[T any](t T, err error) T {
 	return t
 }
 
+func command(cond bool, fn func()) {
+	if cond {
+		fn()
+		os.Exit(0)
+	}
+}
+
 func readJson[T any](file string) T {
 	var t T
 	bytes := must(os.ReadFile(file))
