@@ -25,3 +25,12 @@ docker rm <old-container>
 Rather than run this sequence of commands every time, petra places these commands in a golang function. This function executes when petra detects a change in its config file (`/petra/petra-config.json`).
 
 Programs that run via petra receive config through an environment variable called `CONFIG`.
+
+Example commands:
+```
+# petra runs as a background process (see petra.service)
+sudo petra --background
+
+petra --set <new-tag>
+petra --job <job-tag>
+```
